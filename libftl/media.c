@@ -96,7 +96,6 @@ ftl_status_t media_init(ftl_stream_configuration_private_t *ftl) {
 
   ftl_media_config_t *media = &ftl->media;
   ftl_status_t status = FTL_SUCCESS;
-  int idx;
 
   if (ftl_get_state(ftl, FTL_MEDIA_READY)) {
     return FTL_SUCCESS;
@@ -125,7 +124,7 @@ ftl_status_t media_init(ftl_stream_configuration_private_t *ftl) {
     ftl_media_component_common_t *media_comp[] = { &ftl->video.media_component, &ftl->audio.media_component };
     ftl_media_component_common_t *comp;
 
-    for (idx = 0; idx < sizeof(media_comp) / sizeof(media_comp[0]); idx++) {
+    for (size_t idx = 0; idx < sizeof(media_comp) / sizeof(media_comp[0]); idx++) {
 
       comp = media_comp[idx];
 
@@ -408,7 +407,6 @@ void _update_timestamp(ftl_stream_configuration_private_t *ftl, ftl_media_compon
 
 ftl_status_t media_speed_test(ftl_stream_configuration_private_t *ftl, int speed_kbps, int duration_ms, speed_test_t *results) {
   ftl_media_component_common_t *mc = &ftl->audio.media_component;
-  ftl_media_config_t *media = &ftl->media;
   int64_t bytes_sent = 0;
   int error = 0;
   int effective_kbps = -1;
@@ -418,7 +416,6 @@ ftl_status_t media_speed_test(ftl_stream_configuration_private_t *ftl, int speed
   int bytes_per_ms;
   int64_t total_ms = 0;
   struct timeval stop_tv, start_tv, delta_tv, sendToTimeLoopTime_tv;
-  float packet_loss = 0.f;
   int64_t ms_elapsed;
   int64_t total_sent = 0;
   int64_t pkts_sent = 0;
@@ -442,7 +439,6 @@ ftl_status_t media_speed_test(ftl_stream_configuration_private_t *ftl, int speed
 
   ping = (ping_pkt_t*)slot.packet;
 
-  int rtp_hdr_len = 0;
   slot.len = sizeof(ping_pkt_t);
 
   ping->header = htonl((2 << 30) | (fmt << 24) | (ptype << 16) | sizeof(ping_pkt_t));
@@ -484,7 +480,7 @@ ftl_status_t media_speed_test(ftl_stream_configuration_private_t *ftl, int speed
 
     while (transmit_level > 0) {
       pkts_sent++;
-      if ((bytes_sent = media_send_audio(ftl, 0, data, sizeof(data))) < sizeof(data)) {
+      if ((bytes_sent = media_send_audio(ftl, 0, data, sizeof(data))) < (int)(sizeof(data))) {
         error = 1;
         break;
       }
@@ -580,14 +576,12 @@ ftl_status_t media_speed_test(ftl_stream_configuration_private_t *ftl, int speed
 
 int media_send_audio(ftl_stream_configuration_private_t *ftl, int64_t dts_usec, uint8_t *data, int32_t len) {
   ftl_media_component_common_t *mc = &ftl->audio.media_component;
-  uint8_t nalu_type = 0;
   int bytes_sent = 0;
 
   int pkt_len;
   int payload_size;
   nack_slot_t *slot;
   int remaining = len;
-  int retries = 0;
 
 
   // When we get our first audio packet, indicate that we are ready to send.
@@ -1038,6 +1032,7 @@ static int _media_make_audio_rtp_packet(ftl_stream_configuration_private_t *ftl,
 }
 
 static int _media_set_marker_bit(ftl_media_component_common_t *mc, uint8_t *in) {
+  (void)(mc);
   uint32_t rtp_header;
 
   rtp_header = ntohl(*((uint32_t*)in));
@@ -1116,7 +1111,7 @@ OS_THREAD_ROUTINE recv_thread(void *data)
       continue;
     }
 
-    int version, padding, feedbackType, ptype, length, ssrcSender, ssrcMedia;
+    int feedbackType, ptype, length, ssrcMedia;
     uint16_t snBase, blp, sn;
     int recv_len = ret;
 
@@ -1126,8 +1121,6 @@ OS_THREAD_ROUTINE recv_thread(void *data)
     }
 
     /*extract rtp header*/
-    version = (buf[0] >> 6) & 0x3;
-    padding = (buf[0] >> 5) & 0x1;
     feedbackType = buf[0] & 0x1F;
     ptype = buf[1];
 
@@ -1140,7 +1133,6 @@ OS_THREAD_ROUTINE recv_thread(void *data)
         continue;
       }
 
-      ssrcSender = ntohl(*((uint32_t*)(buf + 4)));
       ssrcMedia = ntohl(*((uint32_t*)(buf + 8)));
 
       uint16_t *p = (uint16_t *)(buf + 12);
@@ -1197,7 +1189,6 @@ OS_THREAD_ROUTINE recv_thread(void *data)
 OS_THREAD_ROUTINE video_send_thread(void *data)
 {
   ftl_stream_configuration_private_t *ftl = (ftl_stream_configuration_private_t *)data;
-  ftl_media_config_t *media = &ftl->media;
   ftl_media_component_common_t *video = &ftl->video.media_component;
 
   int first_packet = 1;
@@ -1303,7 +1294,7 @@ OS_THREAD_ROUTINE audio_send_thread(void *data)
 }
 
 static void _update_xmit_level(ftl_stream_configuration_private_t *ftl, int *transmit_level, struct timeval *start_tv, int bytes_per_ms) {
-
+  (void)(ftl);
   struct timeval stop_tv;
 
   gettimeofday(&stop_tv, NULL);
@@ -1335,6 +1326,7 @@ static int _update_stats(ftl_stream_configuration_private_t *ftl) {
 }
 
 static int _send_pkt_stats(ftl_stream_configuration_private_t *ftl, ftl_media_component_common_t *mc, int interval_ms) {
+  (void)(interval_ms);
   ftl_status_msg_t m;
   m.type = FTL_STATUS_VIDEO_PACKETS;
   ftl_packet_stats_msg_t *p = &m.msg.pkt_stats;
@@ -1383,6 +1375,7 @@ static int _send_instant_pkt_stats(ftl_stream_configuration_private_t *ftl, ftl_
 }
 
 static int _send_video_stats(ftl_stream_configuration_private_t *ftl, ftl_media_component_common_t *mc, int interval_ms) {
+  (void)(interval_ms);
   ftl_status_msg_t m;
   ftl_video_frame_stats_msg_t *v = &m.msg.video_stats;
   struct timeval now;
@@ -1467,7 +1460,7 @@ OS_THREAD_ROUTINE ping_thread(void *data) {
             ftl_media_component_common_t *media_comp[] = { &ftl->video.media_component, &ftl->audio.media_component };
             ftl_media_component_common_t *comp;
             int mediaCount = 0;
-            for (mediaCount = 0; mediaCount < sizeof(media_comp) / sizeof(media_comp[0]); mediaCount++) {
+            for (mediaCount = 0; mediaCount < (int)(sizeof(media_comp) / sizeof(media_comp[0])); mediaCount++) {
 
                 comp = media_comp[mediaCount];
 

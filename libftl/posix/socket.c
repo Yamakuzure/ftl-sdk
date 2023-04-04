@@ -79,7 +79,7 @@ int set_socket_enable_keepalive(SOCKET socket){
 
 int get_socket_send_buf(SOCKET socket, int *buffer_space) {
   int len = sizeof(*buffer_space);
-  return getsockopt(socket, SOL_SOCKET, SO_SNDBUF, (char*)buffer_space, &len);
+  return getsockopt(socket, SOL_SOCKET, SO_SNDBUF, (char*)buffer_space, (socklen_t*)(&len));
 }
 
 int set_socket_send_buf(SOCKET socket, int buffer_space) {

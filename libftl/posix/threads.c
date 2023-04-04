@@ -27,11 +27,12 @@
 pthread_mutexattr_t ftl_default_mutexattr;
 
 int os_create_thread(OS_THREAD_HANDLE *handle, OS_THREAD_ATTRIBS *attibs, OS_THREAD_START_ROUTINE func, void *args) {
-
+  (void)(attibs);
   return pthread_create(handle, NULL, func, args);
 }
 
 int os_destroy_thread(OS_THREAD_HANDLE handle) {
+  (void)(handle);
   return 0;
 }
 
@@ -63,13 +64,13 @@ int os_unlock_mutex(OS_MUTEX *mutex) {
 }
 
 int os_delete_mutex(OS_MUTEX *mutex) {
+  (void)(mutex);
   return 0;
 }
 
 int os_semaphore_create(OS_SEMAPHORE *sem, const char *name, int oflag, unsigned int value) {
-
-  int retval = 0;
-
+  (void)(name);
+  (void)(oflag);
   if (pthread_mutex_init(&sem->mutex, NULL))
     return -2;
 

@@ -26,6 +26,8 @@
 #include "ftl_private.h"
 
 void ftl_log_msg(ftl_stream_configuration_private_t *ftl, ftl_log_severity_t log_level, const char * file, int lineno, const char * fmt, ...) {
+  (void)(file);
+  (void)(lineno);
   va_list args;
   ftl_status_msg_t m;
   m.type = FTL_STATUS_LOG;

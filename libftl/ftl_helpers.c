@@ -68,7 +68,6 @@ unsigned char decode_hex_char(char c) {
 }
 
 int recv_all(SOCKET sock, char * buf, int buflen, const char line_terminator) {
-    int pos = 0;
     int n;
     int bytes_recd = 0;
 
@@ -279,6 +278,7 @@ ftl_status_t _set_ingest_hostname(ftl_stream_configuration_private_t *ftl) {
 }
 
 int _get_remote_ip(struct sockaddr *addr, size_t addrlen, char *remote_ip, size_t ip_len) {
+  (void)(addrlen);
   if (addr->sa_family == AF_INET)
   {
     struct sockaddr_in *ipv4_addr = (struct sockaddr_in *)addr;

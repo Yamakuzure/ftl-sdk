@@ -31,7 +31,6 @@ static int _ping_server(const char *hostname, int port) {
   hints.ai_socktype = SOCK_DGRAM;
   hints.ai_protocol = 0;
 
-  int ingest_port = INGEST_PORT;
   char port_str[10];
 
   snprintf(port_str, 10, "%d", port);
@@ -79,7 +78,6 @@ static int _ping_server(const char *hostname, int port) {
 
 OS_THREAD_ROUTINE _ingest_get_rtt(void *data) {
     _tmp_ingest_thread_data_t *thread_data = (_tmp_ingest_thread_data_t *)data;
-    ftl_stream_configuration_private_t *ftl = thread_data->ftl;
     ftl_ingest_t *ingest = thread_data->ingest;
     int ping;
     
@@ -176,7 +174,6 @@ ftl_status_t ftl_find_closest_available_ingest(const char* ingestHosts[], int in
 
     gettimeofday(&stop, NULL);
     timeval_subtract(&delta, &stop, &start);
-    int ms = (int)timeval_to_ms(&delta);
 
     for (i = 0; i < ingestsCount; i++) {
         if (handles[i] != 0) {
@@ -227,7 +224,6 @@ OS_THREAD_ROUTINE _ingest_get_hosts(ftl_stream_configuration_private_t *ftl) {
   CURL *curl_handle;
   CURLcode res;
   struct MemoryStruct chunk;
-  char *query_result = NULL;
   size_t i = 0;
   int total_ingest_cnt = 0;
   json_error_t error;
@@ -240,8 +236,6 @@ OS_THREAD_ROUTINE _ingest_get_hosts(ftl_stream_configuration_private_t *ftl) {
   char ingestBestUrl[1024], vendorName[100], vendorVersion[100], ftlSdkVersion[20];
   struct curl_slist *list = NULL;
 
-  int formatUri = snprintf(ingestBestUrl, sizeof(ingestBestUrl), INGEST_LIST_URI, ftl->channel_id);
-  
   curl_easy_setopt(curl_handle, CURLOPT_URL, ingestBestUrl);
 
   int formatVendorName = snprintf(vendorName, sizeof(vendorName), "MS-ClientId: %s", ftl->vendor_name);
@@ -335,7 +329,7 @@ cleanup:
   
   ftl->ingest_count = total_ingest_cnt;
   
-  return total_ingest_cnt;
+  return (OS_THREAD_ROUTINE)((size_t)(total_ingest_cnt));
 }
 
 char * ingest_find_best(ftl_stream_configuration_private_t *ftl) {
@@ -354,7 +348,7 @@ char * ingest_find_best(ftl_stream_configuration_private_t *ftl) {
     free(elmt);
   }
 
-  if (_ingest_get_hosts(ftl) <= 0) {
+  if (NULL == _ingest_get_hosts(ftl)) {
     return NULL;
   }
 
