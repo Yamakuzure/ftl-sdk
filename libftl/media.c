@@ -112,7 +112,7 @@ ftl_status_t media_init(ftl_stream_configuration_private_t *ftl) {
             return FTL_DNS_FAILURE;
     }
 
-    if ((status = _get_addr_info(ftl->socket_family, ftl->ingest_ip, media->assigned_port, &media->ingest_addr, &media->ingest_addrlen)) != FTL_SUCCESS) {
+    if ((status = _get_addr_info(ftl->socket_family, ftl->ingest_ip, (short)(media->assigned_port), &media->ingest_addr, &media->ingest_addrlen)) != FTL_SUCCESS) {
             return status;
     }
 
@@ -840,7 +840,7 @@ static int _media_send_slot(ftl_stream_configuration_private_t *ftl, nack_slot_t
   pkt_len = slot->len;
   os_unlock_mutex(&ftl->media.mutex);
 
-  if ((tx_len = sendto(ftl->media.media_socket, pkt, pkt_len, 0, (struct sockaddr*) ftl->media.ingest_addr, (int)ftl->media.ingest_addrlen)) == SOCKET_ERROR)
+  if ((tx_len = sendto(ftl->media.media_socket, (char*)pkt, pkt_len, 0, (struct sockaddr*) ftl->media.ingest_addr, (int)ftl->media.ingest_addrlen)) == SOCKET_ERROR)
   {
     FTL_LOG(ftl, FTL_LOG_ERROR, "sendto() failed with error: %s", get_socket_error());
   }
@@ -1094,7 +1094,7 @@ OS_THREAD_ROUTINE recv_thread(void *data)
 
     // We have data on the socket, read it.
     addr_len = addrinfo_len;
-    ret = recvfrom(media->media_socket, buf, MAX_PACKET_BUFFER, 0, (struct sockaddr *)addrinfo, &addr_len);
+    ret = recvfrom(media->media_socket, (char*)buf, MAX_PACKET_BUFFER, 0, (struct sockaddr *)addrinfo, &addr_len);
     if (ret <= 0) {
       // This shouldn't be possible, we should only be here is poll above told us there was data.
       FTL_LOG(ftl, FTL_LOG_INFO, "recv from failed with %s\n", get_socket_error());
@@ -1147,7 +1147,7 @@ OS_THREAD_ROUTINE recv_thread(void *data)
           int i;
           for (i = 0; i < 16; i++) {
             if ((blp & (1 << i)) != 0) {
-              sn = snBase + i + 1;
+              sn = (uint16_t)(snBase + i + 1);
               _nack_resend_packet(ftl, ssrcMedia, sn);
             }
           }
@@ -1192,7 +1192,7 @@ OS_THREAD_ROUTINE video_send_thread(void *data)
   ftl_media_component_common_t *video = &ftl->video.media_component;
 
   int first_packet = 1;
-  int bytes_per_ms;
+  int bytes_per_ms = 0;
   int pkt_sent;
   int video_kbps = -1;
   int disable_flow_control = 1;

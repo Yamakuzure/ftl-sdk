@@ -16,7 +16,7 @@ typedef struct {
 
 static int _ping_server(const char *hostname, int port) {
 
-  SOCKET sock;
+  SOCKET sock = (SOCKET)0;
   struct addrinfo hints;
   char dummy[4];
   struct timeval start, stop, delta;
@@ -329,7 +329,7 @@ cleanup:
   
   ftl->ingest_count = total_ingest_cnt;
   
-  return (OS_THREAD_ROUTINE)((size_t)(total_ingest_cnt));
+  return (OS_THREAD_TYPE)((size_t)(total_ingest_cnt));
 }
 
 char * ingest_find_best(ftl_stream_configuration_private_t *ftl) {
@@ -348,7 +348,7 @@ char * ingest_find_best(ftl_stream_configuration_private_t *ftl) {
     free(elmt);
   }
 
-  if (NULL == _ingest_get_hosts(ftl)) {
+  if ((OS_THREAD_TYPE)0 == _ingest_get_hosts(ftl)) {
     return NULL;
   }
 

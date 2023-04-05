@@ -8,7 +8,10 @@
 #endif
 
 #ifdef _WIN32
-int gettimeofday(struct timeval * tp, struct timezone * tzp);
+struct timeval;
+struct timezone;
+struct timespec;
+int gettimeofday(struct timeval *tp, struct timezone *tzp);
 #endif
 int timeval_subtract(struct timeval *result, const struct timeval *end, const struct timeval *start);
 int64_t timeval_subtract_to_ms(const struct timeval *end, const struct timeval *start);
